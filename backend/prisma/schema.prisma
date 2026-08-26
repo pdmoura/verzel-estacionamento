@@ -1,0 +1,86 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ── Enums ──────────────────────────────────────────────
+
+enum ReservationStatus {
+  ACTIVE
+  CANCELLED
+  PROMOTED
+}
+
+enum WaitlistStatus {
+  WAITING
+  PROMOTED
+  LEFT
+}
+
+enum HistoryEventType {
+  RESERVATION_CREATED
+  RESERVATION_CANCELLED
+  WAITLIST_JOINED
+  WAITLIST_LEFT
+  WAITLIST_PROMOTED
+}
+
+// ── Models ─────────────────────────────────────────────
+
+model Sector {
+  id              Int       @id @default(autoincrement())
+  name            String
+  location        String
+  reservableQuota Int
+  hourlyRate      Decimal   @db.Decimal(10, 2)
+  availableSpots  Int
+  createdAt       DateTime  @default(now())
+
+  reservations    Reservation[]
+  waitlistEntries WaitlistEntry[]
+}
+
+model Reservation {
+  id              Int               @id @default(autoincrement())
+  plate           String
+  sectorId        Int
+  sector          Sector            @relation(fields: [sectorId], references: [id])
+  expectedArrival DateTime
+  status          ReservationStatus @default(ACTIVE)
+  createdAt       DateTime          @default(now())
+
+  waitlistEntries WaitlistEntry[]
+  historyEvents   HistoryEvent[]
+}
+
+model WaitlistEntry {
+  id              Int            @id @default(autoincrement())
+  plate           String
+  sectorId        Int
+  sector          Sector         @relation(fields: [sectorId], references: [id])
+  expectedArrival DateTime
+  status          WaitlistStatus @default(WAITING)
+  reservationId   Int?
+  reservation     Reservation?   @relation(fields: [reservationId], references: [id])
+  createdAt       DateTime       @default(now())
+
+  historyEvents   HistoryEvent[]
+}
+
+model HistoryEvent {
+  id              Int              @id @default(autoincrement())
+  type            HistoryEventType
+  description     String
+  reservationId   Int?
+  reservation     Reservation?     @relation(fields: [reservationId], references: [id])
+  waitlistEntryId Int?
+  waitlistEntry   WaitlistEntry?   @relation(fields: [waitlistEntryId], references: [id])
+  originEventId   Int?
+  originEvent     HistoryEvent?    @relation("EventOrigin", fields: [originEventId], references: [id])
+  triggeredEvents HistoryEvent[]   @relation("EventOrigin")
+  createdAt       DateTime         @default(now())
+}

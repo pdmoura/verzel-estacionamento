@@ -65,14 +65,14 @@ A aplicação estará disponível em `http://localhost:3000`.
 ### Backend (Render Web Service)
 
 - **Root:** `backend`
-- **Build:** `npm ci && npx prisma generate && npm run build`
+- **Build:** `npm install && npx prisma generate && npm run build`
 - **Start:** `npm run start:prod`
 - **Variáveis:** `DATABASE_URL`, `FRONTEND_URL`, `PORT`
 
 ### Frontend (Render Web Service)
 
 - **Root:** `frontend`
-- **Build:** `npm ci && npm run build`
+- **Build:** `npm install && npm run build`
 - **Start:** `npm start`
 - **Variáveis:** `NEXT_PUBLIC_API_URL` (definir antes do build)
 

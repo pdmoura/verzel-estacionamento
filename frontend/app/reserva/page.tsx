@@ -14,7 +14,17 @@ export default function ReservaPage() {
   const [showWaitlistOption, setShowWaitlistOption] = useState(false);
 
   useEffect(() => {
-    api.getSectors().then(setSectors).catch(console.error);
+    const fetchSectors = () => {
+      api.getSectors().then(setSectors).catch(console.error);
+    };
+    
+    // Carrega imediatamente ao abrir a página
+    fetchSectors();
+    
+    // Atualiza os dados a cada 5 segundos (Polling)
+    const interval = setInterval(fetchSectors, 5000);
+    
+    return () => clearInterval(interval);
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {

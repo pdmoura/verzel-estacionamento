@@ -144,7 +144,7 @@ export default function ReservaPage() {
           {!showWaitlistOption ? (
             <button
               type="submit"
-              className="btn btn-success btn-lg w-100"
+              className="btn btn-primary btn-lg w-100"
               disabled={submitting}
             >
               {submitting ? 'Processando...' : 'Confirmar Reserva'}

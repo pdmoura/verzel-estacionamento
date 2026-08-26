@@ -89,7 +89,8 @@ function statusBadgeClass(status: string): string {
    ════════════════════════════════════════════════════════ */
 
 export default function ParkingApp() {
-  const [activeTab, setActiveTab] = useState('sectors');
+  const [activeTab, setActiveTab] = useState('dashboard');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Global data
   const [sectors, setSectors] = useState<Sector[]>([]);
@@ -140,6 +141,7 @@ export default function ParkingApp() {
   };
 
   const tabs = [
+    { key: 'dashboard', label: 'Dashboard', icon: 'bi-grid-1x2' },
     { key: 'sectors', label: 'Setores', icon: 'bi-building' },
     { key: 'reservations', label: 'Reservas', icon: 'bi-calendar-check' },
     { key: 'waitlist', label: 'Lista de Espera', icon: 'bi-hourglass-split' },
@@ -148,35 +150,54 @@ export default function ParkingApp() {
   ];
 
   return (
-    <>
-      {/* Header */}
-      <header className="app-header">
-        <div className="container">
-          <h1>
-            <i className="bi bi-car-front-fill me-2"></i>
-            Estacionamento Rotativo
-          </h1>
-          <p>Sistema de gestão — Praça Central</p>
+    <div className="layout-wrapper">
+      <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
+        <div className="sidebar-header">
+          <i className="bi bi-car-front-fill"></i>
+          <h1>Verzel Park</h1>
         </div>
-      </header>
-
-      <div className="container pb-5">
-        {/* Tab Navigation */}
-        <ul className="nav nav-tabs mb-4">
+        <div className="sidebar-nav">
           {tabs.map((tab) => (
-            <li className="nav-item" key={tab.key}>
-              <button
-                className={`nav-link ${activeTab === tab.key ? 'active' : ''}`}
-                onClick={() => setActiveTab(tab.key)}
-              >
-                <i className={`bi ${tab.icon} me-1`}></i>
-                {tab.label}
-              </button>
-            </li>
+            <button
+              key={tab.key}
+              className={`sidebar-link ${activeTab === tab.key ? 'active' : ''}`}
+              onClick={() => {
+                setActiveTab(tab.key);
+                setSidebarOpen(false);
+              }}
+            >
+              <i className={`bi ${tab.icon}`}></i>
+              {tab.label}
+            </button>
           ))}
-        </ul>
+        </div>
+        <div className="sidebar-footer">
+          <div className="admin-avatar">
+            <i className="bi bi-person-fill"></i>
+          </div>
+          <div className="admin-info">
+            <span className="admin-name">Administrador</span>
+            <span className="admin-role">Painel de Gestão</span>
+          </div>
+        </div>
+      </aside>
 
-        {/* Tab Content */}
+      <main className="main-content">
+        <div className="page-header">
+          <h2 className="page-title">
+            {tabs.find((t) => t.key === activeTab)?.label}
+          </h2>
+          <button 
+            className="mobile-menu-btn"
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+          >
+            <i className="bi bi-list"></i>
+          </button>
+        </div>
+
+        {activeTab === 'dashboard' && (
+          <DashboardTab sectors={sectors} reservations={reservations} />
+        )}
         {activeTab === 'sectors' && (
           <SectorsTab sectors={sectors} onRefresh={refreshAll} />
         )}
@@ -198,8 +219,115 @@ export default function ParkingApp() {
         )}
         {activeTab === 'ranking' && <RankingTab ranking={ranking} />}
         {activeTab === 'history' && <HistoryTab />}
+      </main>
+    </div>
+  );
+}
+
+function DashboardTab({ sectors, reservations }: { sectors: Sector[], reservations: Reservation[] }) {
+  const totalSectors = sectors.length;
+  const activeReservations = reservations.filter(r => r.status === 'ACTIVE').length;
+  const waitlistCount = reservations.filter(r => r.status === 'WAITING').length;
+  
+  const totalSpots = sectors.reduce((acc, s) => acc + s.reservableQuota, 0);
+  const usedSpots = totalSpots - sectors.reduce((acc, s) => acc + s.availableSpots, 0);
+  const occupancyRate = totalSpots > 0 ? Math.round((usedSpots / totalSpots) * 100) : 0;
+
+  return (
+    <div>
+      <div className="row g-4 mb-4">
+        <div className="col-md-6 col-lg-3">
+          <div className="card h-100">
+            <div className="stat-card">
+              <div className="stat-icon blue">
+                <i className="bi bi-building"></i>
+              </div>
+              <div className="stat-details">
+                <h3>{totalSectors}</h3>
+                <p>Setores</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="col-md-6 col-lg-3">
+          <div className="card h-100">
+            <div className="stat-card">
+              <div className="stat-icon green">
+                <i className="bi bi-car-front"></i>
+              </div>
+              <div className="stat-details">
+                <h3>{activeReservations}</h3>
+                <p>Reservas</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="col-md-6 col-lg-3">
+          <div className="card h-100">
+            <div className="stat-card">
+              <div className="stat-icon orange">
+                <i className="bi bi-people"></i>
+              </div>
+              <div className="stat-details">
+                <h3>{waitlistCount}</h3>
+                <p>Espera agora</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="col-md-6 col-lg-3">
+          <div className="card h-100">
+            <div className="stat-card">
+              <div className="stat-icon purple">
+                <i className="bi bi-pie-chart"></i>
+              </div>
+              <div className="stat-details">
+                <h3>{occupancyRate}%</h3>
+                <p>Ocupação</p>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
-    </>
+      
+      <div className="card">
+        <div className="card-header">Ocupação por setor</div>
+        <div className="card-body p-0">
+          <div className="table-responsive-mobile">
+            <table className="table">
+              <tbody>
+                {sectors.map(s => {
+                  const used = s.reservableQuota - s.availableSpots;
+                  const rate = s.reservableQuota > 0 ? Math.round((used / s.reservableQuota) * 100) : 0;
+                  return (
+                    <tr key={s.id}>
+                      <td data-label="Setor">
+                        <div className="d-flex align-items-center gap-3">
+                          <div className="admin-avatar bg-primary bg-opacity-10 text-primary fw-bold" style={{width: 32, height: 32}}>
+                            {s.name.charAt(0)}
+                          </div>
+                          <div>
+                            <div className="fw-bold">{s.name}</div>
+                            <small className="text-muted">{s.location}</small>
+                          </div>
+                        </div>
+                      </td>
+                      <td data-label="Ocupação" className="text-end text-md-center">
+                        <div className="d-none d-md-inline-block occupancy-bar">
+                          <div className={`occupancy-fill ${rate > 90 ? 'full' : rate > 75 ? 'high' : ''}`} style={{width: `${rate}%`}}></div>
+                        </div>
+                        <span className="fw-bold text-muted small">{used} / {s.reservableQuota} vagas</span>
+                      </td>
+                      <td data-label="Taxa" className="text-end fw-bold text-primary">{rate}%</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 

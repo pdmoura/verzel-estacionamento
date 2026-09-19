@@ -3,11 +3,19 @@ import { cn } from '@/lib/cn';
 import type { Tone } from '@/lib/format';
 
 const TONE: Record<Tone, string> = {
-  success: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-300',
-  warning: 'bg-amber-100 text-amber-800 dark:bg-amber-500/15 dark:text-amber-300',
-  danger: 'bg-rose-100 text-rose-800 dark:bg-rose-500/15 dark:text-rose-300',
-  info: 'bg-blue-100 text-blue-800 dark:bg-blue-500/15 dark:text-blue-300',
+  success: 'bg-[#dcfce7] text-[#15803d]',
+  warning: 'bg-[#fef3c7] text-[#b45309]',
+  danger: 'bg-[#fee2e2] text-[#dc2626]',
+  info: 'bg-brand-soft text-brand',
   neutral: 'bg-surface-2 text-muted',
+};
+
+const DOT: Record<Tone, string> = {
+  success: 'bg-[#16a34a]',
+  warning: 'bg-[#f59e0b]',
+  danger: 'bg-[#e11d2e]',
+  info: 'bg-brand',
+  neutral: 'bg-muted',
 };
 
 export function Badge({
@@ -24,12 +32,12 @@ export function Badge({
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold whitespace-nowrap',
+        'inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-semibold whitespace-nowrap',
         TONE[tone],
         className,
       )}
     >
-      {dot && <span className="size-1.5 rounded-full bg-current" aria-hidden />}
+      {dot && <span className={cn('size-2 rounded-full', DOT[tone])} aria-hidden />}
       {children}
     </span>
   );

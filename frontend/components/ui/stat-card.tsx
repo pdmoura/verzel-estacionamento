@@ -3,12 +3,13 @@ import { cn } from '@/lib/cn';
 import { Card } from './card';
 
 const TONE = {
-  brand: 'bg-brand-soft text-brand-strong dark:text-blue-200',
-  success: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300',
-  warning: 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300',
-  violet: 'bg-violet-100 text-violet-700 dark:bg-violet-500/15 dark:text-violet-300',
+  brand: 'bg-brand-soft text-brand',
+  success: 'bg-[#dcfce7] text-[#15803d]',
+  warning: 'bg-[#fef3c7] text-[#d97706]',
+  violet: 'bg-brand-soft text-brand',
 } as const;
 
+/** Icon square with the label beside it, then the number and a hint, as in the mockup. */
 export function StatCard({
   label,
   value,
@@ -25,15 +26,13 @@ export function StatCard({
   className?: string;
 }) {
   return (
-    <Card className={cn('flex items-center gap-4 p-5', className)}>
-      <div className={cn('flex size-12 shrink-0 items-center justify-center rounded-2xl [&>svg]:size-6', TONE[tone])}>
-        {icon}
+    <Card className={cn('p-5', className)}>
+      <div className="flex items-center gap-3">
+        <span className={cn('flex size-10 shrink-0 items-center justify-center rounded-xl [&>svg]:size-5', TONE[tone])}>{icon}</span>
+        <span className="text-base font-medium text-text">{label}</span>
       </div>
-      <div className="min-w-0">
-        <p className="truncate text-sm font-medium text-muted">{label}</p>
-        <p className="text-2xl font-bold leading-tight tracking-tight text-text tabular-nums">{value}</p>
-        {hint && <p className="mt-0.5 truncate text-xs text-muted">{hint}</p>}
-      </div>
+      <p className="mt-4 text-4xl font-bold leading-none tracking-tight text-text tabular-nums">{value}</p>
+      {hint && <p className="mt-2 text-base text-muted">{hint}</p>}
     </Card>
   );
 }

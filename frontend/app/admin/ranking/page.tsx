@@ -8,29 +8,31 @@ import { Progress } from '@/components/ui/progress';
 import { ResponsiveTable, type Column } from '@/components/ui/responsive-table';
 import { cn } from '@/lib/cn';
 import { formatMoney } from '@/lib/format';
-import { useRanking } from '@/lib/hooks';
+import { useRanking, useSectors } from '@/lib/hooks';
 import type { RankingItem } from '@/lib/types';
 
 const PODIUM = [
-  'border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-200',
-  'border-slate-300 bg-slate-50 text-slate-700 dark:border-slate-500/40 dark:bg-slate-500/10 dark:text-slate-200',
-  'border-orange-300 bg-orange-50 text-orange-800 dark:border-orange-500/40 dark:bg-orange-500/10 dark:text-orange-200',
+  { label: 'text-[#d97706]', circle: 'bg-[#fef3c7] text-[#f59e0b]' },
+  { label: 'text-slate-500', circle: 'bg-slate-100 text-slate-400' },
+  { label: 'text-[#c2410c]', circle: 'bg-[#ffedd5] text-[#c2410c]' },
 ];
 
 export default function RankingPage() {
   const { data: ranking, error } = useRanking();
+  const { data: sectors } = useSectors();
   const max = ranking?.[0]?.totalReservations ?? 0;
+  const locationOf = (id: number) => sectors?.find((s) => s.id === id)?.location ?? '';
 
   const columns: Column<RankingItem & { position: number }>[] = [
-    { key: 'pos', header: '#', cell: (r) => <span className="font-bold text-muted">{r.position}º</span> },
+    { key: 'pos', header: '#', cell: (r) => <span className="text-lg font-semibold text-text">{r.position}º</span> },
     {
       key: 'name',
       header: 'Setor',
       primary: true,
       cell: (r) => (
         <div>
-          <div className="font-semibold text-text">{r.name}</div>
-          {r.location && <div className="text-xs text-muted">{r.location}</div>}
+          <div className="text-lg font-semibold text-text">{r.name}</div>
+          {locationOf(r.id) && <div className="text-muted">{locationOf(r.id)}</div>}
         </div>
       ),
     },
@@ -39,9 +41,9 @@ export default function RankingPage() {
       key: 'total',
       header: 'Reservas',
       cell: (r) => (
-        <div className="flex items-center gap-3 md:min-w-48">
-          <Progress value={max ? (r.totalReservations / max) * 100 : 0} tone="info" className="hidden w-28 md:block" />
-          <span className="font-semibold tabular-nums text-text">{r.totalReservations}</span>
+        <div className="flex items-center gap-6 md:w-96">
+          <Progress value={max ? (r.totalReservations / max) * 100 : 0} tone="info" className="hidden flex-1 md:block" />
+          <span className="text-lg font-bold tabular-nums text-text">{r.totalReservations}</span>
         </div>
       ),
     },
@@ -49,31 +51,32 @@ export default function RankingPage() {
 
   return (
     <>
-      <PageHeader title="Ranking de setores" description="Setores ordenados pelo total de reservas já registradas (ativas, promovidas e canceladas). Empates são resolvidos por nome." />
+      <PageHeader title="Ranking de setores" description="Classificação pelo total de reservas registradas." />
 
       {ranking && ranking.length > 0 && (
-        <div className="mb-6 grid gap-4 sm:grid-cols-3">
+        <div className="mb-6 grid gap-6 md:grid-cols-3">
           {ranking.slice(0, 3).map((item, idx) => (
-            <div key={item.id} className={cn('rounded-2xl border p-5', PODIUM[idx])}>
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-semibold uppercase tracking-wide opacity-80">{idx + 1}º lugar</span>
-                <Trophy className="size-5 opacity-80" aria-hidden />
+            <Card key={item.id} className="flex items-start justify-between p-6">
+              <div>
+                <p className={cn('text-sm font-semibold', PODIUM[idx].label)}>{idx + 1}º lugar</p>
+                <p className="mt-2 text-2xl font-bold text-text">{item.name}</p>
+                <p className="mt-2 text-muted">{item.totalReservations} reservas</p>
+                <p className="text-muted">{formatMoney(item.hourlyRate)}/h</p>
               </div>
-              <p className="mt-3 text-xl font-bold">{item.name}</p>
-              <p className="text-sm opacity-80">{item.totalReservations} reserva(s) · {formatMoney(item.hourlyRate)}/h</p>
-            </div>
+              <span className={cn('flex size-16 shrink-0 items-center justify-center rounded-full', PODIUM[idx].circle)}>
+                <Trophy className="size-7" strokeWidth={1.75} aria-hidden />
+              </span>
+            </Card>
           ))}
         </div>
       )}
 
       <Card>
         <CardHeader title="Classificação completa" />
-        {error && <p className="p-5 text-sm text-rose-600">{error.message}</p>}
-        {!ranking && !error && <div className="space-y-3 p-5"><Skeleton className="h-12" /><Skeleton className="h-12" /></div>}
+        {error && <p className="px-6 pb-6 text-sm text-rose-600">{error.message}</p>}
+        {!ranking && !error && <div className="space-y-3 px-6 pb-6"><Skeleton className="h-12" /><Skeleton className="h-12" /></div>}
         {ranking?.length === 0 && <EmptyState icon={<Trophy />} title="Ranking vazio" description="O ranking é calculado a partir da primeira reserva registrada." />}
-        {ranking && ranking.length > 0 && (
-          <ResponsiveTable columns={columns} rows={ranking.map((r, i) => ({ ...r, position: i + 1 }))} rowKey={(r) => r.id} />
-        )}
+        {ranking && ranking.length > 0 && <ResponsiveTable columns={columns} rows={ranking.map((r, i) => ({ ...r, position: i + 1 }))} rowKey={(r) => r.id} />}
       </Card>
     </>
   );

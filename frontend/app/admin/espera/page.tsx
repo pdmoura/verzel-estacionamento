@@ -1,10 +1,9 @@
 'use client';
 
-import { Hourglass, LogOut, UserPlus } from 'lucide-react';
+import { Clock3, LogOut, UserPlus } from 'lucide-react';
 import { useMemo, useState, type FormEvent } from 'react';
 import { toast } from 'sonner';
 import { useSWRConfig } from 'swr';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardBody, CardHeader } from '@/components/ui/card';
 import { EmptyState, Skeleton } from '@/components/ui/empty-state';
@@ -14,9 +13,13 @@ import { PageHeader } from '@/components/ui/page-header';
 import { ResponsiveTable, type Column } from '@/components/ui/responsive-table';
 import * as api from '@/lib/api';
 import { cn } from '@/lib/cn';
-import { formatDateTime, formatRelative, localToIso, normalizePlateInput, nowLocalInputValue } from '@/lib/format';
+import { formatArrival, formatRelative, localToIso, normalizePlateInput, nowLocalInputValue } from '@/lib/format';
 import { useAllWaitlist, useSectors, useWaitlist } from '@/lib/hooks';
 import type { WaitlistEntry } from '@/lib/types';
+
+function Position({ n }: { n: number }) {
+  return <span className="flex size-10 items-center justify-center rounded-full bg-[#fef3c7] text-base font-bold text-[#d97706]">{n}</span>;
+}
 
 export default function WaitlistPage() {
   const { mutate } = useSWRConfig();
@@ -74,69 +77,59 @@ export default function WaitlistPage() {
     }
   }
 
-  const queueColumns: Column<WaitlistEntry & { position: number }>[] = [
+  const allColumns: Column<WaitlistEntry & { position: number }>[] = [
     {
       key: 'plate',
       header: 'Placa',
       primary: true,
       cell: (e) => (
-        <div className="flex items-center gap-2">
-          <span className="flex size-7 items-center justify-center rounded-full bg-surface-2 text-xs font-bold text-muted">{e.position}º</span>
-          <span className="font-mono text-base font-semibold tracking-wider">{e.plate}</span>
-        </div>
+        <span className="flex items-center gap-4">
+          <Position n={e.position} />
+          <span className="text-lg font-bold tracking-wide text-text">{e.plate}</span>
+        </span>
       ),
     },
-    { key: 'arrival', header: 'Chegada prevista', cell: (e) => formatDateTime(e.expectedArrival) },
+    { key: 'sector', header: 'Setor', cell: (e) => e.sector?.name ?? selected?.name ?? `#${e.sectorId}` },
+    { key: 'arrival', header: 'Chegada prevista', cell: (e) => formatArrival(e.expectedArrival) },
     { key: 'joined', header: 'Entrou', cell: (e) => <span className="text-muted">{formatRelative(e.createdAt)}</span> },
+  ];
+
+  const queueColumns: Column<WaitlistEntry & { position: number }>[] = [
+    ...allColumns,
     {
       key: 'actions',
       header: 'Ações',
       align: 'right',
       cell: (e) => (
-        <Button variant="ghost" size="sm" className="text-rose-600 hover:bg-rose-50 hover:text-rose-700 dark:hover:bg-rose-500/10" onClick={() => setLeaveTarget(e)} icon={<LogOut className="size-4" />}>
+        <Button variant="ghost" size="sm" className="border border-rose-200 bg-[#fee2e2] text-[#dc2626] hover:bg-rose-100 hover:text-[#b91c1c]" onClick={() => setLeaveTarget(e)} icon={<LogOut className="size-4" strokeWidth={1.75} />}>
           Remover
         </Button>
       ),
     },
   ];
 
-  const allColumns: Column<WaitlistEntry>[] = [
-    { key: 'plate', header: 'Placa', primary: true, cell: (e) => <span className="font-mono text-base font-semibold tracking-wider">{e.plate}</span> },
-    { key: 'sector', header: 'Setor', cell: (e) => e.sector?.name ?? `#${e.sectorId}` },
-    { key: 'arrival', header: 'Chegada prevista', cell: (e) => formatDateTime(e.expectedArrival) },
-    { key: 'joined', header: 'Entrou', cell: (e) => <span className="text-muted">{formatRelative(e.createdAt)}</span> },
-  ];
+  const chip = (active: boolean) =>
+    cn(
+      'inline-flex h-12 items-center gap-2 rounded-full border px-6 text-[15px] font-semibold transition-colors',
+      active ? 'border-brand bg-brand text-white' : 'border-border bg-surface text-text hover:bg-surface-2',
+    );
 
   return (
     <>
-      <PageHeader title="Lista de espera" description="Só é possível entrar na fila de um setor lotado. Quando uma reserva é cancelada, a primeira placa da fila (FIFO) é promovida automaticamente." />
+      <PageHeader title="Lista de espera" description="Fila FIFO por setor, com promoção automática quando uma vaga é liberada." />
 
-      <div className="mb-6 flex flex-wrap gap-2" role="tablist" aria-label="Setores">
-        <button
-          type="button"
-          role="tab"
-          aria-selected={selectedId === null}
-          onClick={() => setSelectedId(null)}
-          className={cn('rounded-full border px-4 py-2 text-sm font-medium transition-colors', selectedId === null ? 'border-brand bg-brand text-white' : 'border-border bg-surface text-text hover:bg-surface-2')}
-        >
-          Todas as filas {all && <span className="ml-1 opacity-80">({all.length})</span>}
+      <div className="mb-8 flex flex-wrap gap-4" role="tablist" aria-label="Setores">
+        <button type="button" role="tab" aria-selected={selectedId === null} onClick={() => setSelectedId(null)} className={chip(selectedId === null)}>
+          Todas as filas {all && `(${all.length})`}
         </button>
-        {!sectors && <Skeleton className="h-10 w-32 rounded-full" />}
+        {!sectors && <Skeleton className="h-12 w-40 rounded-full" />}
         {sectors?.map((s) => {
           const n = countBySector.get(s.id) ?? 0;
-          const active = selectedId === s.id;
           return (
-            <button
-              key={s.id}
-              type="button"
-              role="tab"
-              aria-selected={active}
-              onClick={() => setSelectedId(s.id)}
-              className={cn('inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition-colors', active ? 'border-brand bg-brand text-white' : 'border-border bg-surface text-text hover:bg-surface-2')}
-            >
+            <button key={s.id} type="button" role="tab" aria-selected={selectedId === s.id} onClick={() => setSelectedId(s.id)} className={chip(selectedId === s.id)}>
               {s.name}
-              {s.availableSpots === 0 ? <Badge tone={active ? 'neutral' : 'danger'} className={active ? 'bg-white/20 text-white' : ''}>Lotado</Badge> : null}
-              {n > 0 && <span className={cn('rounded-full px-1.5 text-xs font-bold', active ? 'bg-white/20' : 'bg-surface-2 text-muted')}>{n}</span>}
+              {s.availableSpots === 0 && ' · Lotado'}
+              {n > 0 && ` (${n})`}
             </button>
           );
         })}
@@ -144,10 +137,10 @@ export default function WaitlistPage() {
 
       {selectedId === null ? (
         <Card>
-          <CardHeader title="Todas as placas aguardando" description="Ordem de chegada dentro de cada setor." />
-          {!all && <div className="space-y-3 p-5"><Skeleton className="h-12" /><Skeleton className="h-12" /></div>}
-          {all?.length === 0 && <EmptyState icon={<Hourglass />} title="Nenhuma placa na fila" description="As filas só recebem placas quando um setor está lotado." />}
-          {all && all.length > 0 && <ResponsiveTable columns={allColumns} rows={all} rowKey={(e) => e.id} />}
+          <CardHeader title="Todas as placas aguardando" />
+          {!all && <div className="space-y-3 px-6 pb-6"><Skeleton className="h-12" /><Skeleton className="h-12" /></div>}
+          {all?.length === 0 && <EmptyState icon={<Clock3 />} title="Nenhuma placa na fila" description="As filas só recebem placas quando um setor está lotado." />}
+          {all && all.length > 0 && <ResponsiveTable columns={allColumns} rows={all.map((e, i) => ({ ...e, position: i + 1 }))} rowKey={(e) => e.id} />}
         </Card>
       ) : (
         <div className="grid gap-6 lg:grid-cols-5">
@@ -156,12 +149,12 @@ export default function WaitlistPage() {
             <CardBody>
               <form onSubmit={handleJoin} className="grid gap-4">
                 <Field label="Placa" htmlFor="wl-plate">
-                  <Input id="wl-plate" value={plate} onChange={(e) => setPlate(normalizePlateInput(e.target.value))} placeholder="ABC1D23" required minLength={7} maxLength={7} className="font-mono uppercase tracking-[0.2em]" disabled={!!selected && selected.availableSpots > 0} />
+                  <Input id="wl-plate" value={plate} onChange={(e) => setPlate(normalizePlateInput(e.target.value))} placeholder="ABC1D23" required minLength={7} maxLength={7} className="font-bold uppercase tracking-wide" disabled={!!selected && selected.availableSpots > 0} />
                 </Field>
                 <Field label="Chegada prevista" htmlFor="wl-arrival">
                   <Input id="wl-arrival" type="datetime-local" value={arrival} min={nowLocalInputValue()} onChange={(e) => setArrival(e.target.value)} required disabled={!!selected && selected.availableSpots > 0} />
                 </Field>
-                <Button type="submit" loading={submitting} disabled={!!selected && selected.availableSpots > 0} icon={<UserPlus className="size-4" />}>
+                <Button type="submit" loading={submitting} disabled={!!selected && selected.availableSpots > 0} icon={<UserPlus className="size-4" strokeWidth={1.75} />}>
                   Entrar na lista de espera
                 </Button>
               </form>
@@ -170,24 +163,14 @@ export default function WaitlistPage() {
 
           <Card className="lg:col-span-3">
             <CardHeader title={`Fila do ${selected?.name ?? 'setor'}`} description={queue ? `${queue.length} placa(s) aguardando` : undefined} />
-            {!queue && <div className="space-y-3 p-5"><Skeleton className="h-12" /><Skeleton className="h-12" /></div>}
-            {queue?.length === 0 && <EmptyState icon={<Hourglass />} title="Fila vazia" description="Nenhuma placa aguardando neste setor." />}
-            {queue && queue.length > 0 && (
-              <ResponsiveTable columns={queueColumns} rows={queue.map((e, i) => ({ ...e, position: i + 1 }))} rowKey={(e) => e.id} />
-            )}
+            {!queue && <div className="space-y-3 px-6 pb-6"><Skeleton className="h-12" /><Skeleton className="h-12" /></div>}
+            {queue?.length === 0 && <EmptyState icon={<Clock3 />} title="Fila vazia" description="Nenhuma placa aguardando neste setor." />}
+            {queue && queue.length > 0 && <ResponsiveTable columns={queueColumns} rows={queue.map((e, i) => ({ ...e, position: i + 1 }))} rowKey={(e) => e.id} />}
           </Card>
         </div>
       )}
 
-      <ConfirmDialog
-        open={leaveTarget !== null}
-        onClose={() => setLeaveTarget(null)}
-        onConfirm={confirmLeave}
-        loading={leaving}
-        title="Remover da lista de espera?"
-        description={`A placa ${leaveTarget?.plate ?? ''} perderá a posição na fila.`}
-        confirmLabel="Remover"
-      />
+      <ConfirmDialog open={leaveTarget !== null} onClose={() => setLeaveTarget(null)} onConfirm={confirmLeave} loading={leaving} title="Remover da lista de espera?" description={`A placa ${leaveTarget?.plate ?? ''} perderá a posição na fila.`} confirmLabel="Remover" />
     </>
   );
 }

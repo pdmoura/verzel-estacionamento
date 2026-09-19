@@ -1,6 +1,6 @@
 'use client';
 
-import { CalendarCheck2, History, Plus, Search, XCircle } from 'lucide-react';
+import { CalendarDays, FileText, Plus, Search, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { useSWRConfig } from 'swr';
@@ -15,7 +15,7 @@ import { ConfirmDialog, Modal } from '@/components/ui/modal';
 import { PageHeader } from '@/components/ui/page-header';
 import { ResponsiveTable, type Column } from '@/components/ui/responsive-table';
 import * as api from '@/lib/api';
-import { RESERVATION_STATUS_LABEL, RESERVATION_TONE, formatDateTime, normalizePlateInput } from '@/lib/format';
+import { RESERVATION_STATUS_LABEL, RESERVATION_TONE, formatArrival, normalizePlateInput } from '@/lib/format';
 import { useReservations, useSectors } from '@/lib/hooks';
 import type { Reservation, ReservationStatus } from '@/lib/types';
 
@@ -32,7 +32,6 @@ export default function ReservationsPage() {
   const [cancelTarget, setCancelTarget] = useState<Reservation | null>(null);
   const [cancelling, setCancelling] = useState(false);
 
-  // Debounce the plate search so we do not hit the API on every keystroke
   useEffect(() => {
     const t = setTimeout(() => setPlate(plateInput), 300);
     return () => clearTimeout(t);
@@ -54,32 +53,29 @@ export default function ReservationsPage() {
   }
 
   const columns: Column<Reservation>[] = [
+    { key: 'plate', header: 'Placa', primary: true, cell: (r) => <span className="text-base font-bold tracking-wide text-text">{r.plate}</span> },
+    { key: 'id', header: '#', cell: (r) => <span className="tabular-nums">#{String(r.id).padStart(3, '0')}</span> },
+    { key: 'sector', header: 'Setor', cell: (r) => r.sector.name },
+    { key: 'arrival', header: 'Chegada prevista', cell: (r) => formatArrival(r.expectedArrival) },
     {
-      key: 'plate',
-      header: 'Placa',
-      primary: true,
+      key: 'status',
+      header: 'Status',
       cell: (r) => (
-        <div className="flex items-center gap-2">
-          <span className="font-mono text-base font-semibold tracking-wider text-text">{r.plate}</span>
-          <Badge tone={RESERVATION_TONE[r.status]}>{RESERVATION_STATUS_LABEL[r.status]}</Badge>
-        </div>
+        <Badge tone={RESERVATION_TONE[r.status]} dot>
+          {RESERVATION_STATUS_LABEL[r.status]}
+        </Badge>
       ),
     },
-    { key: 'id', header: '#', cell: (r) => <span className="text-muted">#{r.id}</span> },
-    { key: 'sector', header: 'Setor', cell: (r) => r.sector.name },
-    { key: 'arrival', header: 'Chegada prevista', cell: (r) => formatDateTime(r.expectedArrival) },
-    { key: 'created', header: 'Criada em', cell: (r) => <span className="text-muted">{formatDateTime(r.createdAt)}</span> },
     {
       key: 'actions',
       header: 'Ações',
-      align: 'right',
       cell: (r) => (
-        <div className="flex justify-end gap-1">
-          <Button variant="ghost" size="sm" onClick={() => setHistoryId(r.id)} icon={<History className="size-4" />}>
+        <div className="flex flex-wrap gap-3">
+          <Button variant="ghost" size="sm" className="border border-brand/30 bg-brand-soft text-brand hover:bg-brand-soft hover:text-brand-strong" onClick={() => setHistoryId(r.id)} icon={<FileText className="size-4" strokeWidth={1.75} />}>
             Histórico
           </Button>
           {r.status === 'ACTIVE' && (
-            <Button variant="ghost" size="sm" className="text-rose-600 hover:bg-rose-50 hover:text-rose-700 dark:hover:bg-rose-500/10" onClick={() => setCancelTarget(r)} icon={<XCircle className="size-4" />}>
+            <Button variant="ghost" size="sm" className="border border-rose-200 bg-[#fee2e2] text-[#dc2626] hover:bg-rose-100 hover:text-[#b91c1c]" onClick={() => setCancelTarget(r)} icon={<Trash2 className="size-4" strokeWidth={1.75} />}>
               Cancelar
             </Button>
           )}
@@ -96,7 +92,7 @@ export default function ReservationsPage() {
         title="Reservas"
         description="Uma placa só pode ter uma reserva ativa por vez. Cancelar uma reserva promove automaticamente a primeira placa da lista de espera do setor."
         actions={
-          <Button onClick={() => setOpenForm(true)} icon={<Plus className="size-4" />}>
+          <Button size="lg" onClick={() => setOpenForm(true)} icon={<Plus className="size-5" strokeWidth={2} />}>
             Nova reserva
           </Button>
         }
@@ -105,14 +101,13 @@ export default function ReservationsPage() {
       <Card>
         <CardHeader
           title="Todas as reservas"
-          description={reservations ? `${reservations.length} resultado(s)` : undefined}
           actions={
-            <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+            <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
               <div className="relative">
-                <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted" aria-hidden />
-                <Input aria-label="Buscar por placa" value={plateInput} onChange={(e) => setPlateInput(normalizePlateInput(e.target.value))} placeholder="Buscar placa" className="h-10 pl-9 font-mono uppercase sm:w-44" />
+                <Search className="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-muted" strokeWidth={1.75} aria-hidden />
+                <Input aria-label="Buscar por placa" value={plateInput} onChange={(e) => setPlateInput(normalizePlateInput(e.target.value))} placeholder="Buscar placa" className="h-12 pl-12 sm:w-60" />
               </div>
-              <Select aria-label="Filtrar por status" value={status} onChange={(e) => setStatus(e.target.value as ReservationStatus | '')} className="h-10 sm:w-40">
+              <Select aria-label="Filtrar por status" value={status} onChange={(e) => setStatus(e.target.value as ReservationStatus | '')} className="h-12 sm:w-64">
                 <option value="">Todos os status</option>
                 <option value="ACTIVE">Ativas</option>
                 <option value="PROMOTED">Promovidas</option>
@@ -121,23 +116,21 @@ export default function ReservationsPage() {
             </div>
           }
         />
-        {error && <p className="p-5 text-sm text-rose-600">{error.message}</p>}
-        {!reservations && !error && (
-          <div className="space-y-3 p-5">
-            <Skeleton className="h-12" />
-            <Skeleton className="h-12" />
-            <Skeleton className="h-12" />
+        <div className="px-6 pb-6">
+          <div className="overflow-hidden rounded-xl border border-border">
+            {error && <p className="p-5 text-sm text-rose-600">{error.message}</p>}
+            {!reservations && !error && (
+              <div className="space-y-3 p-5">
+                <Skeleton className="h-12" />
+                <Skeleton className="h-12" />
+              </div>
+            )}
+            {reservations?.length === 0 && (
+              <EmptyState icon={<CalendarDays />} title={filtered ? 'Nenhuma reserva encontrada' : 'Nenhuma reserva ainda'} description={filtered ? 'Ajuste a busca ou o filtro de status.' : 'Crie a primeira reserva ou use o portal do motorista.'} />
+            )}
+            {reservations && reservations.length > 0 && <ResponsiveTable columns={columns} rows={reservations} rowKey={(r) => r.id} className="[&_thead_tr]:border-t-0" />}
           </div>
-        )}
-        {reservations?.length === 0 && (
-          <EmptyState
-            icon={<CalendarCheck2 />}
-            title={filtered ? 'Nenhuma reserva encontrada' : 'Nenhuma reserva ainda'}
-            description={filtered ? 'Ajuste a busca ou o filtro de status.' : 'Crie a primeira reserva ou use o portal do motorista.'}
-            action={!filtered && <Button onClick={() => setOpenForm(true)} icon={<Plus className="size-4" />}>Nova reserva</Button>}
-          />
-        )}
-        {reservations && reservations.length > 0 && <ResponsiveTable columns={columns} rows={reservations} rowKey={(r) => r.id} />}
+        </div>
       </Card>
 
       <Modal open={openForm} onClose={() => setOpenForm(false)} title="Nova reserva" description="A vaga é descontada do setor no momento da reserva.">

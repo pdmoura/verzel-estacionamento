@@ -1,34 +1,18 @@
 @import 'tailwindcss';
 
-/* ── Design tokens ─────────────────────────────────────
-   Light by default, dark via prefers-color-scheme. Every color the UI uses
-   goes through these variables so both themes stay consistent. */
+/* ── Design tokens (light theme, locked to the approved mockups) ───────── */
 :root {
-  --bg: #f4f6fb;
+  --bg: #f4f7fe;
   --surface: #ffffff;
-  --surface-2: #eef2f7;
-  --border: #e3e8f0;
+  --surface-2: #eef3fb;
+  --border: #e3e8f1;
   --text: #0f172a;
   --muted: #64748b;
-  --brand: #2563eb;
-  --brand-strong: #1d4ed8;
-  --brand-soft: #dbeafe;
+  --brand: #0052ff;
+  --brand-strong: #0043d6;
+  --brand-soft: #e6eeff;
+  --sidebar: #0b1437;
   color-scheme: light;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #0b1120;
-    --surface: #111a2c;
-    --surface-2: #1a2438;
-    --border: #253149;
-    --text: #e6eaf2;
-    --muted: #8e9bb3;
-    --brand: #3b82f6;
-    --brand-strong: #60a5fa;
-    --brand-soft: #1e3a8a;
-    color-scheme: dark;
-  }
 }
 
 @theme inline {
@@ -41,8 +25,9 @@
   --color-brand: var(--brand);
   --color-brand-strong: var(--brand-strong);
   --color-brand-soft: var(--brand-soft);
-  --font-sans: var(--font-geist), ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --font-mono: var(--font-geist-mono), ui-monospace, 'Cascadia Mono', Menlo, monospace;
+  --color-sidebar: var(--sidebar);
+  --font-sans: var(--font-plex), ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, 'Cascadia Mono', Menlo, monospace;
 }
 
 @keyframes fade-in {
@@ -60,22 +45,13 @@
   to { transform: translateX(0); opacity: 1; }
 }
 
-/* Scroll-driven entrance for the landing rows. Pure CSS: the element rises
-   as it enters the viewport. Browsers without animation-timeline, and people
-   who prefer reduced motion, simply get the element in place. */
-@keyframes rise {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-@supports (animation-timeline: view()) {
-  @media (prefers-reduced-motion: no-preference) {
-    .reveal {
-      animation: rise linear both;
-      animation-timeline: view();
-      animation-range: entry 0% entry 35%;
-    }
-  }
+/* Driver portal backdrop: pale illustration when present, soft blue wash otherwise. */
+.portal-bg {
+  background-color: var(--bg);
+  background-image: linear-gradient(180deg, rgba(244, 247, 254, 0.35) 0%, rgba(244, 247, 254, 0.9) 70%, var(--bg) 100%), url('/portal-bg.jpg');
+  background-size: auto, cover;
+  background-position: top, center top;
+  background-repeat: no-repeat;
 }
 
 @layer base {
@@ -89,7 +65,7 @@
   }
 
   :focus-visible {
-    @apply outline-none ring-4 ring-brand/30;
+    @apply outline-none ring-4 ring-brand/25;
   }
 
   select {

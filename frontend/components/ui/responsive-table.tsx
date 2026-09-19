@@ -5,17 +5,14 @@ export interface Column<T> {
   key: string;
   header: string;
   cell: (row: T) => ReactNode;
-  /** Extra classes for the desktop cell */
   className?: string;
-  /** Hide the label on the mobile card (e.g. for the primary field) */
   primary?: boolean;
-  /** Right-align (numbers, actions) */
   align?: 'left' | 'right' | 'center';
 }
 
 /**
- * Desktop: a regular table. Mobile (< md): one card per row with label/value
- * pairs, so nothing needs horizontal scrolling.
+ * Desktop: table with a light header row and hairline dividers.
+ * Mobile (< md): one block per row with label/value pairs.
  */
 export function ResponsiveTable<T>({
   columns,
@@ -28,18 +25,16 @@ export function ResponsiveTable<T>({
   rowKey: (row: T) => string | number;
   className?: string;
 }) {
-  const align = (a?: Column<T>['align']) =>
-    a === 'right' ? 'text-right' : a === 'center' ? 'text-center' : 'text-left';
+  const align = (a?: Column<T>['align']) => (a === 'right' ? 'text-right' : a === 'center' ? 'text-center' : 'text-left');
 
   return (
     <div className={className}>
-      {/* Desktop */}
       <div className="hidden md:block">
-        <table className="w-full text-sm">
+        <table className="w-full text-[15px]">
           <thead>
-            <tr className="border-b border-border bg-surface-2/60 text-xs uppercase tracking-wide text-muted">
+            <tr className="border-y border-border bg-[#f8fafc] text-sm font-semibold text-muted">
               {columns.map((c) => (
-                <th key={c.key} scope="col" className={cn('px-5 py-3 font-semibold', align(c.align))}>
+                <th key={c.key} scope="col" className={cn('px-6 py-3', align(c.align))}>
                   {c.header}
                 </th>
               ))}
@@ -47,9 +42,9 @@ export function ResponsiveTable<T>({
           </thead>
           <tbody>
             {rows.map((row) => (
-              <tr key={rowKey(row)} className="border-b border-border last:border-0 hover:bg-surface-2/50">
+              <tr key={rowKey(row)} className="border-b border-border last:border-0">
                 {columns.map((c) => (
-                  <td key={c.key} className={cn('px-5 py-3.5 align-middle text-text', align(c.align), c.className)}>
+                  <td key={c.key} className={cn('px-6 py-5 align-middle text-text', align(c.align), c.className)}>
                     {c.cell(row)}
                   </td>
                 ))}
@@ -59,13 +54,12 @@ export function ResponsiveTable<T>({
         </table>
       </div>
 
-      {/* Mobile */}
-      <ul className="divide-y divide-border md:hidden">
+      <ul className="divide-y divide-border border-t border-border md:hidden">
         {rows.map((row) => {
           const primary = columns.find((c) => c.primary);
           const rest = columns.filter((c) => !c.primary);
           return (
-            <li key={rowKey(row)} className="space-y-2 px-4 py-4">
+            <li key={rowKey(row)} className="space-y-2 px-5 py-4">
               {primary && <div className="text-base font-semibold text-text">{primary.cell(row)}</div>}
               <dl className="grid grid-cols-[minmax(0,1fr)_auto] gap-x-4 gap-y-1.5 text-sm">
                 {rest.map((c) => (

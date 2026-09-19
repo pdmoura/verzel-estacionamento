@@ -22,8 +22,8 @@ const columns: Column<Sector>[] = [
     primary: true,
     cell: (s) => (
       <div>
-        <div className="font-semibold text-text">{s.name}</div>
-        {s.location && <div className="text-xs text-muted">{s.location}</div>}
+        <div className="text-lg font-semibold text-text">{s.name}</div>
+        {s.location && <div className="mt-0.5 text-muted">{s.location}</div>}
       </div>
     ),
   },
@@ -33,12 +33,11 @@ const columns: Column<Sector>[] = [
     cell: (s) => {
       const o = occupancy(s);
       return (
-        <div className="flex items-center gap-3 md:min-w-44">
-          <Progress value={o.rate} tone={o.tone} className="hidden w-24 md:block" />
-          <span className="tabular-nums">
-            <span className="font-semibold text-text">{s.availableSpots}</span>
-            <span className="text-muted"> / {s.reservableQuota} livres</span>
-          </span>
+        <div className="md:w-52">
+          <p className="mb-2 text-lg font-semibold tabular-nums text-text">
+            {s.availableSpots} / {s.reservableQuota} livres
+          </p>
+          <Progress value={o.rate} tone={o.tone} />
         </div>
       );
     },
@@ -47,7 +46,7 @@ const columns: Column<Sector>[] = [
   {
     key: 'status',
     header: 'Status',
-    cell: (s) => (s.availableSpots > 0 ? <Badge tone="success" dot>Disponível</Badge> : <Badge tone="danger" dot>Lotado</Badge>),
+    cell: (s) => (s.availableSpots > 0 ? <Badge tone="success">Disponível</Badge> : <Badge tone="danger">Lotado</Badge>),
   },
   { key: 'created', header: 'Criado em', cell: (s) => <span className="text-muted">{formatDateTime(s.createdAt)}</span> },
 ];
@@ -60,30 +59,25 @@ export default function SectorsPage() {
     <>
       <PageHeader
         title="Setores"
-        description="Cada setor tem uma cota de vagas reserváveis e uma tarifa por hora."
+        description="Gerencie cota reservável, localização e tarifa por hora."
         actions={
-          <Button onClick={() => setOpen(true)} icon={<Plus className="size-4" />}>
+          <Button size="lg" onClick={() => setOpen(true)} icon={<Plus className="size-5" strokeWidth={2} />}>
             Novo setor
           </Button>
         }
       />
 
       <Card>
-        <CardHeader title="Setores cadastrados" description={sectors ? `${sectors.length} setor(es)` : undefined} />
-        {error && <p className="p-5 text-sm text-rose-600">{error.message}</p>}
+        <CardHeader title="Setores cadastrados" />
+        {error && <p className="px-6 pb-6 text-sm text-rose-600">{error.message}</p>}
         {!sectors && !error && (
-          <div className="space-y-3 p-5">
-            <Skeleton className="h-12" />
-            <Skeleton className="h-12" />
+          <div className="space-y-3 px-6 pb-6">
+            <Skeleton className="h-14" />
+            <Skeleton className="h-14" />
           </div>
         )}
         {sectors?.length === 0 && (
-          <EmptyState
-            icon={<Building2 />}
-            title="Nenhum setor cadastrado"
-            description="Cadastre o primeiro setor para liberar reservas no portal do motorista."
-            action={<Button onClick={() => setOpen(true)} icon={<Plus className="size-4" />}>Cadastrar setor</Button>}
-          />
+          <EmptyState icon={<Building2 />} title="Nenhum setor cadastrado" description="Cadastre o primeiro setor para liberar reservas no portal do motorista." action={<Button onClick={() => setOpen(true)} icon={<Plus className="size-4" />}>Cadastrar setor</Button>} />
         )}
         {sectors && sectors.length > 0 && <ResponsiveTable columns={columns} rows={sectors} rowKey={(s) => s.id} />}
       </Card>

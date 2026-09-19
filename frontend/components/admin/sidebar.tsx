@@ -58,7 +58,7 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
             className={cn(
               'flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium transition-colors',
               active
-                ? 'bg-brand text-white shadow-md shadow-brand/30'
+                ? 'bg-brand text-white'
                 : 'text-slate-300 hover:bg-white/10 hover:text-white',
             )}
           >
@@ -74,7 +74,7 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
 function Brand() {
   return (
     <Link href="/" className="flex items-center gap-3 px-5 py-5">
-      <Image src="/logo.png" alt="" width={40} height={40} className="size-10 rounded-xl shadow-md shadow-brand/40" priority />
+      <Image src="/logo.png" alt="" width={40} height={40} className="size-10 rounded-xl" priority />
       <span className="leading-tight">
         <span className="block text-base font-bold text-white">Praça Central</span>
         <span className="block text-xs text-slate-400">Estacionamento rotativo</span>

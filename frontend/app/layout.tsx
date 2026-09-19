@@ -1,27 +1,27 @@
 import type { Metadata, Viewport } from 'next';
-import { Inter } from 'next/font/google';
+import { Geist, Geist_Mono } from 'next/font/google';
 import { Toaster } from 'sonner';
 import './globals.css';
 
-const inter = Inter({ subsets: ['latin'], variable: '--font-inter', display: 'swap' });
+const geist = Geist({ subsets: ['latin'], variable: '--font-geist', display: 'swap' });
+const geistMono = Geist_Mono({ subsets: ['latin'], variable: '--font-geist-mono', display: 'swap' });
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://estacionamento.vercel.app';
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://praca-central-estacionamento.vercel.app';
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: 'Estacionamento Rotativo — Praça Central',
-    template: '%s · Estacionamento Rotativo',
+    default: 'Estacionamento Rotativo da Praça Central',
+    template: '%s | Praça Central',
   },
   description:
-    'Reserva de vagas em tempo real, lista de espera com promoção automática, ranking de setores e histórico rastreável. NestJS + Prisma + PostgreSQL + Next.js.',
+    'Reserva de vagas por setor, lista de espera com promoção automática, ranking de setores e histórico de eventos do estacionamento rotativo da praça central.',
   openGraph: {
     type: 'website',
     locale: 'pt_BR',
-    title: 'Estacionamento Rotativo — Praça Central',
-    description:
-      'Reserva de vagas em tempo real, lista de espera FIFO com promoção automática, ranking e histórico de eventos.',
-    siteName: 'Estacionamento Rotativo',
+    title: 'Estacionamento Rotativo da Praça Central',
+    description: 'Reserve sua vaga por setor, entre na fila quando o setor lotar e acompanhe tudo em tempo real.',
+    siteName: 'Praça Central',
   },
   robots: { index: true, follow: true },
 };
@@ -37,7 +37,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="pt-BR" className={inter.variable}>
+    <html lang="pt-BR" className={`${geist.variable} ${geistMono.variable}`}>
       <body className="min-h-dvh">
         {children}
         <Toaster richColors position="top-right" closeButton toastOptions={{ duration: 4500 }} />

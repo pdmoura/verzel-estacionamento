@@ -43,7 +43,7 @@ function SectorPicker({ sectors, value, onChange }: { sectors: Sector[] | undefi
             onClick={() => onChange(s.id)}
             className={cn(
               'rounded-2xl border p-4 text-left transition-all focus-visible:ring-4 focus-visible:ring-brand/30',
-              active ? 'border-brand bg-brand-soft/60 shadow-md shadow-brand/10 dark:bg-brand-soft/30' : 'border-border bg-surface hover:border-brand/50 hover:bg-surface-2/60',
+              active ? 'border-brand bg-brand-soft/60 dark:bg-brand-soft/30' : 'border-border bg-surface hover:border-brand/50 hover:bg-surface-2/60',
             )}
           >
             <div className="flex items-start justify-between gap-2">
@@ -142,12 +142,12 @@ function ReserveTab() {
   return (
     <form onSubmit={submit} className="space-y-6">
       <div>
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted">1. Escolha o setor</h2>
+        <h2 className="mb-3 text-base font-semibold text-text">Escolha o setor</h2>
         <SectorPicker sectors={sectors} value={sectorId} onChange={(id) => { setSectorId(id); setOfferWaitlist(false); }} />
       </div>
 
       <div>
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted">2. Seus dados</h2>
+        <h2 className="mb-3 text-base font-semibold text-text">Seus dados</h2>
         <Card>
           <CardBody className="grid gap-4 sm:grid-cols-2">
             <Field label="Placa do veículo" htmlFor="drv-plate" hint="Formato antigo (ABC1234) ou Mercosul (ABC1D23).">
@@ -261,7 +261,7 @@ function LookupTab() {
 
           {results.length > 0 && (
             <div>
-              <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted">Histórico da placa</h3>
+              <h3 className="mb-2 text-base font-semibold text-text">Histórico da placa</h3>
               <ul className="divide-y divide-border rounded-2xl border border-border bg-surface">
                 {results.map((r) => (
                   <li key={r.id} className="flex items-center justify-between gap-3 px-4 py-3 text-sm">
@@ -299,7 +299,7 @@ export default function DriverPortalPage() {
 
       <main className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-12">
         <div className="mb-8 text-center">
-          <Image src="/logo.png" alt="" width={64} height={64} className="mx-auto size-16 rounded-2xl shadow-lg shadow-brand/30" priority />
+          <Image src="/logo.png" alt="" width={64} height={64} className="mx-auto size-16 rounded-2xl" priority />
           <h1 className="mt-4 text-3xl font-extrabold tracking-tight text-text">Portal do motorista</h1>
           <p className="mt-2 text-muted">Estacionamento rotativo · Praça Central</p>
         </div>
@@ -309,7 +309,7 @@ export default function DriverPortalPage() {
             ['reserve', 'Reservar vaga'],
             ['lookup', 'Minha reserva'],
           ] as const).map(([key, label]) => (
-            <button key={key} type="button" role="tab" aria-selected={tab === key} onClick={() => setTab(key)} className={cn('h-11 rounded-xl text-sm font-semibold transition-colors', tab === key ? 'bg-brand text-white shadow-md shadow-brand/30' : 'text-muted hover:text-text')}>
+            <button key={key} type="button" role="tab" aria-selected={tab === key} onClick={() => setTab(key)} className={cn('h-11 rounded-xl text-sm font-semibold transition-colors', tab === key ? 'bg-brand text-white' : 'text-muted hover:text-text')}>
               {label}
             </button>
           ))}

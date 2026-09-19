@@ -3,7 +3,7 @@
   "buildCommand": "npx prisma generate && npm run build",
   "functions": {
     "api/index.js": {
-      "includeFiles": "dist/**",
+      "includeFiles": "{dist/**,node_modules/swagger-ui-dist/**}",
       "maxDuration": 15
     }
   },

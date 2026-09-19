@@ -328,7 +328,8 @@ function Portal() {
       </header>
 
       <main className="portal-bg relative flex-1">
-        <div className="mx-auto max-w-[960px] px-6 py-12">
+        {/* On phones the backdrop gets an uncovered band under the form (pb-[56vw]) so the car is visible. */}
+        <div className="mx-auto max-w-[960px] px-6 pt-10 pb-[56vw] md:py-12">
           <h1 className="text-5xl font-bold tracking-tight text-text">Reserve sua vaga</h1>
           <p className="mt-3 text-xl text-muted">Sem cadastro. Escolha um setor e informe sua placa.</p>
 

@@ -48,12 +48,21 @@
 /* Driver portal backdrop: pale city + car illustration pinned to the bottom, full width. */
 .portal-bg {
   background-color: var(--bg);
-  /* The illustration is 16:9 and stretched to the full width, so its height is 56.25vw.
-     The gradient is sized to the same box so the fade sits exactly on the image's top edge. */
+  /* The illustration is 16:9. On phones it is zoomed to 220% width and anchored right so the
+     car and the P sign fill the bottom of the screen; from tablet up the full scene spans the width.
+     The gradient box matches the image box (height = width * 0.5625) so the fade sits on its top edge. */
+  --portal-scale: 2.2;
   background-image: linear-gradient(180deg, var(--bg) 0%, rgba(244, 247, 254, 0) 40%, rgba(244, 247, 254, 0) 82%, var(--bg) 100%), url('/portal-bg.jpg');
-  background-size: 100% calc(56.25vw + 2px), 100% auto;
-  background-position: center bottom, center bottom;
+  background-size: 100% calc(56.25vw * var(--portal-scale) + 2px), calc(100% * var(--portal-scale)) auto;
+  background-position: center bottom, right bottom;
   background-repeat: no-repeat;
+}
+
+@media (min-width: 768px) {
+  .portal-bg {
+    --portal-scale: 1;
+    background-position: center bottom, center bottom;
+  }
 }
 
 @layer base {

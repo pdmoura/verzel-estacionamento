@@ -12,6 +12,7 @@ import {
   Trophy,
   X,
 } from 'lucide-react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -73,9 +74,7 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
 function Brand() {
   return (
     <Link href="/" className="flex items-center gap-3 px-5 py-5">
-      <span className="flex size-10 items-center justify-center rounded-xl bg-brand text-white shadow-md shadow-brand/40">
-        <CarFront className="size-5" aria-hidden />
-      </span>
+      <Image src="/logo.png" alt="" width={40} height={40} className="size-10 rounded-xl shadow-md shadow-brand/40" priority />
       <span className="leading-tight">
         <span className="block text-base font-bold text-white">Praça Central</span>
         <span className="block text-xs text-slate-400">Estacionamento rotativo</span>
@@ -125,9 +124,7 @@ export function MobileTopbar() {
     <>
       <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-border bg-surface/90 px-4 backdrop-blur lg:hidden">
         <Link href="/" className="flex items-center gap-2 font-bold text-text">
-          <span className="flex size-8 items-center justify-center rounded-lg bg-brand text-white">
-            <CarFront className="size-4" aria-hidden />
-          </span>
+          <Image src="/logo.png" alt="" width={32} height={32} className="size-8 rounded-lg" priority />
           Praça Central
         </Link>
         <button

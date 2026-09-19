@@ -1,6 +1,7 @@
 'use client';
 
-import { ArrowLeft, CalendarCheck2, CarFront, CheckCircle2, Hourglass, Search, XCircle } from 'lucide-react';
+import { ArrowLeft, CalendarCheck2, CheckCircle2, Hourglass, Search, XCircle } from 'lucide-react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useState, type FormEvent } from 'react';
 import { toast } from 'sonner';
@@ -298,9 +299,7 @@ export default function DriverPortalPage() {
 
       <main className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-12">
         <div className="mb-8 text-center">
-          <span className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-brand text-white shadow-lg shadow-brand/30">
-            <CarFront className="size-7" aria-hidden />
-          </span>
+          <Image src="/logo.png" alt="" width={64} height={64} className="mx-auto size-16 rounded-2xl shadow-lg shadow-brand/30" priority />
           <h1 className="mt-4 text-3xl font-extrabold tracking-tight text-text">Portal do motorista</h1>
           <p className="mt-2 text-muted">Estacionamento rotativo · Praça Central</p>
         </div>

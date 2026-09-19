@@ -108,6 +108,8 @@ Limite de 120 requisições/minuto por IP.
 
 ## Deploy
 
+Os dois projetos Vercel estão ligados ao repositório GitHub (branch `master`), cada um com o **Root Directory** apontando para a sua pasta (`backend` e `frontend`). Sem isso o Vercel compila a raiz vazia do repositório e o site responde 404. O GitHub Actions só roda lint, build e testes; o deploy acontece pela integração Git do Vercel a cada push.
+
 **API (Vercel, pasta `backend`)** — `vercel.json` compila com `prisma generate && nest build` e roteia tudo para `api/index.js`. Variáveis: `DATABASE_URL` (pooler de transação, porta 6543, `?pgbouncer=true&connection_limit=1`), `DIRECT_URL` (pooler de sessão, porta 5432, usado pelo `prisma migrate deploy`) e opcionalmente `FRONTEND_URL` (origens extras para CORS, separadas por vírgula).
 
 **Web (Vercel, pasta `frontend`)** — variáveis `NEXT_PUBLIC_API_URL` e `NEXT_PUBLIC_SITE_URL`.

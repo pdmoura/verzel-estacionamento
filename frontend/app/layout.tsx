@@ -1,36 +1,47 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
+import { Inter } from 'next/font/google';
+import { Toaster } from 'sonner';
 import './globals.css';
 
+const inter = Inter({ subsets: ['latin'], variable: '--font-inter', display: 'swap' });
+
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://estacionamento.vercel.app';
+
 export const metadata: Metadata = {
-  title: 'Estacionamento Rotativo — Praça Central',
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: 'Estacionamento Rotativo — Praça Central',
+    template: '%s · Estacionamento Rotativo',
+  },
   description:
-    'Sistema de gestão de vagas, reservas, lista de espera e ranking dos setores do estacionamento rotativo da praça central.',
+    'Reserva de vagas em tempo real, lista de espera com promoção automática, ranking de setores e histórico rastreável. NestJS + Prisma + PostgreSQL + Next.js.',
+  openGraph: {
+    type: 'website',
+    locale: 'pt_BR',
+    title: 'Estacionamento Rotativo — Praça Central',
+    description:
+      'Reserva de vagas em tempo real, lista de espera FIFO com promoção automática, ranking e histórico de eventos.',
+    siteName: 'Estacionamento Rotativo',
+  },
+  robots: { index: true, follow: true },
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export const viewport: Viewport = {
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#f4f6fb' },
+    { media: '(prefers-color-scheme: dark)', color: '#0b1120' },
+  ],
+  width: 'device-width',
+  initialScale: 1,
+};
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="pt-BR">
-      <head>
-        <link
-          href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
-          rel="stylesheet"
-          integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YcnS/3fGH7C0e+Ezi+E1A1cKol2EHwAnoJy"
-          crossOrigin="anonymous"
-        />
-        <link
-          rel="stylesheet"
-          href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
-        />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap"
-          rel="stylesheet"
-        />
-      </head>
-      <body>{children}</body>
+    <html lang="pt-BR" className={inter.variable}>
+      <body className="min-h-dvh">
+        {children}
+        <Toaster richColors position="top-right" closeButton toastOptions={{ duration: 4500 }} />
+      </body>
     </html>
   );
 }

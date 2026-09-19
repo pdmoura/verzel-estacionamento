@@ -1,185 +1,323 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import * as api from '../api-client';
+import { ArrowLeft, CalendarCheck2, CarFront, CheckCircle2, Hourglass, Search, XCircle } from 'lucide-react';
+import Link from 'next/link';
+import { useState, type FormEvent } from 'react';
+import { toast } from 'sonner';
+import { useSWRConfig } from 'swr';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardBody } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/empty-state';
+import { Field, Input } from '@/components/ui/field';
+import { ConfirmDialog } from '@/components/ui/modal';
+import * as api from '@/lib/api';
+import { ApiError } from '@/lib/api';
+import { cn } from '@/lib/cn';
+import { RESERVATION_STATUS_LABEL, RESERVATION_TONE, formatDateTime, formatMoney, localToIso, normalizePlateInput, nowLocalInputValue } from '@/lib/format';
+import { useSectors } from '@/lib/hooks';
+import type { Reservation, Sector, WaitlistEntry } from '@/lib/types';
 
-export default function ReservaPage() {
-  const [sectors, setSectors] = useState<any[]>([]);
-  const [sectorId, setSectorId] = useState('');
+type Outcome = { kind: 'reservation'; reservation: Reservation } | { kind: 'waitlist'; entry: WaitlistEntry; sector: Sector };
+
+function SectorPicker({ sectors, value, onChange }: { sectors: Sector[] | undefined; value: number | null; onChange: (id: number) => void }) {
+  if (!sectors) {
+    return (
+      <div className="grid gap-3 sm:grid-cols-2">
+        {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-24 rounded-2xl" />)}
+      </div>
+    );
+  }
+  return (
+    <div className="grid gap-3 sm:grid-cols-2" role="radiogroup" aria-label="Setor">
+      {sectors.map((s) => {
+        const full = s.availableSpots === 0;
+        const active = value === s.id;
+        return (
+          <button
+            key={s.id}
+            type="button"
+            role="radio"
+            aria-checked={active}
+            onClick={() => onChange(s.id)}
+            className={cn(
+              'rounded-2xl border p-4 text-left transition-all focus-visible:ring-4 focus-visible:ring-brand/30',
+              active ? 'border-brand bg-brand-soft/60 shadow-md shadow-brand/10 dark:bg-brand-soft/30' : 'border-border bg-surface hover:border-brand/50 hover:bg-surface-2/60',
+            )}
+          >
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <p className="font-semibold text-text">{s.name}</p>
+                {s.location && <p className="truncate text-xs text-muted">{s.location}</p>}
+              </div>
+              {full ? <Badge tone="danger">Lotado</Badge> : <Badge tone="success">{s.availableSpots} livre{s.availableSpots > 1 ? 's' : ''}</Badge>}
+            </div>
+            <p className="mt-3 text-sm text-muted">
+              <span className="font-semibold text-text">{formatMoney(s.hourlyRate)}</span> / hora · {s.reservableQuota} vagas
+            </p>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function ReserveTab() {
+  const { data: sectors } = useSectors();
+  const { mutate } = useSWRConfig();
+  const [sectorId, setSectorId] = useState<number | null>(null);
   const [plate, setPlate] = useState('');
   const [arrival, setArrival] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [showWaitlistOption, setShowWaitlistOption] = useState(false);
+  const [offerWaitlist, setOfferWaitlist] = useState(false);
+  const [outcome, setOutcome] = useState<Outcome | null>(null);
 
-  useEffect(() => {
-    const fetchSectors = () => {
-      api.getSectors().then(setSectors).catch(console.error);
-    };
-    
-    // Carrega imediatamente ao abrir a página
-    fetchSectors();
-    
-    // Atualiza os dados a cada 5 segundos (Polling)
-    const interval = setInterval(fetchSectors, 5000);
-    
-    return () => clearInterval(interval);
-  }, []);
+  const selected = sectors?.find((s) => s.id === sectorId) ?? null;
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  function reset() {
+    setOutcome(null);
+    setOfferWaitlist(false);
+    setPlate('');
+    setArrival('');
+    setSectorId(null);
+  }
+
+  async function submit(e: FormEvent) {
     e.preventDefault();
-    setError(null);
-    setSuccess(null);
-    setShowWaitlistOption(false);
+    if (!sectorId) {
+      toast.error('Escolha um setor.');
+      return;
+    }
     setSubmitting(true);
-
-    const isoArrival = arrival ? new Date(arrival).toISOString() : '';
-
     try {
-      await api.createReservation({
-        plate,
-        sectorId: parseInt(sectorId, 10),
-        expectedArrival: isoArrival,
-      });
-      setSuccess('Reserva confirmada com sucesso! Vaga garantida.');
-      setPlate('');
-      setArrival('');
-      setSectorId('');
-    } catch (err: any) {
-      if (err.code === 'NO_SPOTS') {
-        setError(
-          'Este setor está lotado no momento. Deseja entrar na lista de espera?'
-        );
-        setShowWaitlistOption(true);
-      } else {
-        setError(err.message || 'Erro ao realizar reserva.');
-      }
+      const reservation = await api.createReservation({ plate, sectorId, expectedArrival: localToIso(arrival) });
+      setOutcome({ kind: 'reservation', reservation });
+      await mutate('sectors');
+    } catch (err) {
+      if (err instanceof ApiError && err.code === 'NO_SPOTS') setOfferWaitlist(true);
+      else toast.error(err instanceof Error ? err.message : 'Erro ao reservar.');
     } finally {
       setSubmitting(false);
     }
-  };
+  }
 
-  const handleJoinWaitlist = async () => {
-    setError(null);
+  async function join() {
+    if (!sectorId || !selected) return;
     setSubmitting(true);
-    const isoArrival = arrival ? new Date(arrival).toISOString() : '';
-
     try {
-      await api.joinWaitlist(parseInt(sectorId, 10), {
-        plate,
-        expectedArrival: isoArrival,
-      });
-      setSuccess('Você entrou na lista de espera! Avisaremos quando uma vaga vagar.');
-      setShowWaitlistOption(false);
-      setPlate('');
-      setArrival('');
-      setSectorId('');
-    } catch (err: any) {
-      setError(err.message || 'Erro ao entrar na lista de espera.');
+      const entry = await api.joinWaitlist(sectorId, { plate, expectedArrival: localToIso(arrival) });
+      setOutcome({ kind: 'waitlist', entry, sector: selected });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Erro ao entrar na lista de espera.');
     } finally {
       setSubmitting(false);
     }
-  };
+  }
+
+  if (outcome) {
+    const ok = outcome.kind === 'reservation';
+    return (
+      <Card>
+        <CardBody className="text-center">
+          <span className={cn('mx-auto flex size-16 items-center justify-center rounded-full', ok ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-300' : 'bg-amber-100 text-amber-600 dark:bg-amber-500/15 dark:text-amber-300')}>
+            {ok ? <CheckCircle2 className="size-8" /> : <Hourglass className="size-8" />}
+          </span>
+          <h2 className="mt-4 text-xl font-bold text-text">{ok ? 'Vaga reservada!' : 'Você está na lista de espera'}</h2>
+          <p className="mt-1 text-sm text-muted">
+            {ok ? 'Apresente a placa na entrada do setor. Guarde o número da reserva.' : 'Assim que uma vaga vagar neste setor, a primeira placa da fila é promovida automaticamente.'}
+          </p>
+          <dl className="mx-auto mt-6 grid max-w-sm grid-cols-2 gap-3 text-left text-sm">
+            <div className="rounded-xl bg-surface-2 p-3"><dt className="text-xs text-muted">Placa</dt><dd className="font-mono text-lg font-bold tracking-wider">{ok ? outcome.reservation.plate : outcome.entry.plate}</dd></div>
+            <div className="rounded-xl bg-surface-2 p-3"><dt className="text-xs text-muted">{ok ? 'Reserva' : 'Fila'}</dt><dd className="text-lg font-bold">#{ok ? outcome.reservation.id : outcome.entry.id}</dd></div>
+            <div className="rounded-xl bg-surface-2 p-3"><dt className="text-xs text-muted">Setor</dt><dd className="font-semibold">{ok ? outcome.reservation.sector.name : outcome.sector.name}</dd></div>
+            <div className="rounded-xl bg-surface-2 p-3"><dt className="text-xs text-muted">Chegada</dt><dd className="font-semibold">{formatDateTime(ok ? outcome.reservation.expectedArrival : outcome.entry.expectedArrival)}</dd></div>
+          </dl>
+          <Button className="mt-6" variant="outline" onClick={reset}>Fazer outra reserva</Button>
+        </CardBody>
+      </Card>
+    );
+  }
 
   return (
-    <div className="driver-portal-wrapper">
-      <div className="card driver-card">
-        <div className="driver-header">
-          <div className="driver-icon">
-            <i className="bi bi-car-front-fill"></i>
+    <form onSubmit={submit} className="space-y-6">
+      <div>
+        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted">1. Escolha o setor</h2>
+        <SectorPicker sectors={sectors} value={sectorId} onChange={(id) => { setSectorId(id); setOfferWaitlist(false); }} />
+      </div>
+
+      <div>
+        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted">2. Seus dados</h2>
+        <Card>
+          <CardBody className="grid gap-4 sm:grid-cols-2">
+            <Field label="Placa do veículo" htmlFor="drv-plate" hint="Formato antigo (ABC1234) ou Mercosul (ABC1D23).">
+              <Input id="drv-plate" value={plate} onChange={(e) => setPlate(normalizePlateInput(e.target.value))} placeholder="ABC1D23" required minLength={7} maxLength={7} autoCapitalize="characters" className="h-12 font-mono text-lg uppercase tracking-[0.25em]" />
+            </Field>
+            <Field label="Previsão de chegada" htmlFor="drv-arrival">
+              <Input id="drv-arrival" type="datetime-local" value={arrival} min={nowLocalInputValue()} onChange={(e) => setArrival(e.target.value)} required className="h-12" />
+            </Field>
+          </CardBody>
+        </Card>
+      </div>
+
+      {offerWaitlist ? (
+        <div className="rounded-2xl border border-amber-300/60 bg-amber-50 p-5 text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100">
+          <p className="font-semibold">O {selected?.name} está lotado no momento.</p>
+          <p className="mt-1 text-sm">Entre na lista de espera: quando uma reserva for cancelada, a primeira placa da fila recebe a vaga automaticamente.</p>
+          <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+            <Button type="button" size="lg" onClick={join} loading={submitting} icon={<Hourglass className="size-5" />}>Entrar na lista de espera</Button>
+            <Button type="button" size="lg" variant="outline" onClick={() => setOfferWaitlist(false)} disabled={submitting}>Escolher outro setor</Button>
           </div>
-          <h2 className="fw-bold mb-2">Reserve sua Vaga</h2>
-          <p className="text-muted">Estacionamento Rotativo — Praça Central</p>
         </div>
+      ) : (
+        <Button type="submit" size="lg" className="w-full" loading={submitting} disabled={!sectorId} icon={<CalendarCheck2 className="size-5" />}>
+          {selected ? `Reservar vaga no ${selected.name}` : 'Escolha um setor para continuar'}
+        </Button>
+      )}
+    </form>
+  );
+}
 
-        {error && (
-          <div className="alert alert-danger mb-4">
-            <i className="bi bi-exclamation-triangle me-2"></i>
-            {error}
-          </div>
-        )}
+function LookupTab() {
+  const { mutate } = useSWRConfig();
+  const [plate, setPlate] = useState('');
+  const [results, setResults] = useState<Reservation[] | null>(null);
+  const [waiting, setWaiting] = useState<WaitlistEntry[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [cancelTarget, setCancelTarget] = useState<Reservation | null>(null);
+  const [cancelling, setCancelling] = useState(false);
 
-        {success && (
-          <div className="alert alert-success mb-4">
-            <i className="bi bi-check-circle me-2"></i>
-            {success}
-          </div>
-        )}
+  async function search(e?: FormEvent) {
+    e?.preventDefault();
+    if (plate.length < 3) return;
+    setLoading(true);
+    try {
+      const [reservations, all] = await Promise.all([api.getReservations({ plate }), api.getAllWaitlist()]);
+      setResults(reservations.filter((r) => r.plate === plate));
+      setWaiting(all.filter((w) => w.plate === plate));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Erro ao consultar.');
+    } finally {
+      setLoading(false);
+    }
+  }
 
-        <form onSubmit={handleSubmit}>
-          <div className="mb-4">
-            <label className="form-label">Setor Desejado</label>
-            <select
-              className="form-select"
-              value={sectorId}
-              onChange={(e) => {
-                setSectorId(e.target.value);
-                setShowWaitlistOption(false);
-              }}
-              required
-            >
-              <option value="">Selecione um setor...</option>
-              {sectors.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name} ({s.availableSpots} vagas disponíveis) - R$ {s.hourlyRate.toFixed(2)}/h
-                </option>
-              ))}
-            </select>
-          </div>
+  async function confirmCancel() {
+    if (!cancelTarget) return;
+    setCancelling(true);
+    try {
+      await api.cancelReservation(cancelTarget.id);
+      toast.success('Reserva cancelada.');
+      setCancelTarget(null);
+      await mutate('sectors');
+      await search();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Erro ao cancelar.');
+    } finally {
+      setCancelling(false);
+    }
+  }
 
-          <div className="mb-4">
-            <label className="form-label">Placa do Veículo</label>
-            <input
-              type="text"
-              className="form-control"
-              value={plate}
-              onChange={(e) => setPlate(e.target.value.toUpperCase())}
-              placeholder="AAA-1234"
-              required
-            />
-          </div>
+  const active = results?.find((r) => r.status === 'ACTIVE');
 
-          <div className="mb-4">
-            <label className="form-label">Previsão de Chegada</label>
-            <input
-              type="datetime-local"
-              className="form-control"
-              value={arrival}
-              onChange={(e) => setArrival(e.target.value)}
-              required
-            />
-          </div>
+  return (
+    <div className="space-y-5">
+      <form onSubmit={search} className="flex flex-col gap-3 sm:flex-row">
+        <Input aria-label="Placa" value={plate} onChange={(e) => setPlate(normalizePlateInput(e.target.value))} placeholder="Digite a placa" minLength={3} maxLength={7} className="h-12 font-mono text-lg uppercase tracking-[0.25em]" />
+        <Button type="submit" size="lg" loading={loading} icon={<Search className="size-5" />}>Consultar</Button>
+      </form>
 
-          {!showWaitlistOption ? (
-            <button
-              type="submit"
-              className="btn btn-primary btn-lg w-100"
-              disabled={submitting}
-            >
-              {submitting ? 'Processando...' : 'Confirmar Reserva'}
-            </button>
+      {results && (
+        <>
+          {active ? (
+            <Card className="border-emerald-300/60 dark:border-emerald-500/30">
+              <CardBody>
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <Badge tone="success" dot>Reserva ativa</Badge>
+                    <p className="mt-2 text-lg font-bold text-text">{active.sector.name} · reserva #{active.id}</p>
+                    <p className="text-sm text-muted">Chegada prevista: {formatDateTime(active.expectedArrival)}</p>
+                  </div>
+                  <Button variant="outline" size="sm" onClick={() => setCancelTarget(active)} icon={<XCircle className="size-4" />}>Cancelar</Button>
+                </div>
+              </CardBody>
+            </Card>
           ) : (
-            <div className="d-grid gap-2">
-              <button
-                type="button"
-                className="btn btn-warning btn-lg"
-                onClick={handleJoinWaitlist}
-                disabled={submitting}
-              >
-                Entrar na Lista de Espera
-              </button>
-              <button
-                type="button"
-                className="btn btn-outline-secondary"
-                onClick={() => setShowWaitlistOption(false)}
-              >
-                Cancelar
-              </button>
+            <Card><CardBody className="text-sm text-muted">Nenhuma reserva ativa para <span className="font-mono font-semibold text-text">{plate}</span>.</CardBody></Card>
+          )}
+
+          {waiting.length > 0 && (
+            <Card className="border-amber-300/60 dark:border-amber-500/30">
+              <CardBody>
+                <Badge tone="warning" dot>Na lista de espera</Badge>
+                <ul className="mt-2 space-y-1 text-sm">
+                  {waiting.map((w) => (
+                    <li key={w.id} className="text-text">{w.sector?.name ?? `Setor #${w.sectorId}`} · chegada {formatDateTime(w.expectedArrival)}</li>
+                  ))}
+                </ul>
+              </CardBody>
+            </Card>
+          )}
+
+          {results.length > 0 && (
+            <div>
+              <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted">Histórico da placa</h3>
+              <ul className="divide-y divide-border rounded-2xl border border-border bg-surface">
+                {results.map((r) => (
+                  <li key={r.id} className="flex items-center justify-between gap-3 px-4 py-3 text-sm">
+                    <div>
+                      <p className="font-semibold text-text">{r.sector.name} · #{r.id}</p>
+                      <p className="text-xs text-muted">{formatDateTime(r.createdAt)}</p>
+                    </div>
+                    <Badge tone={RESERVATION_TONE[r.status]}>{RESERVATION_STATUS_LABEL[r.status]}</Badge>
+                  </li>
+                ))}
+              </ul>
             </div>
           )}
-        </form>
-      </div>
+        </>
+      )}
+
+      <ConfirmDialog open={cancelTarget !== null} onClose={() => setCancelTarget(null)} onConfirm={confirmCancel} loading={cancelling} title="Cancelar sua reserva?" description={`A vaga no ${cancelTarget?.sector.name ?? 'setor'} será liberada para a próxima placa da fila.`} confirmLabel="Cancelar reserva" />
+    </div>
+  );
+}
+
+export default function DriverPortalPage() {
+  const [tab, setTab] = useState<'reserve' | 'lookup'>('reserve');
+
+  return (
+    <div className="min-h-dvh">
+      <header className="border-b border-border bg-surface/80 backdrop-blur">
+        <div className="mx-auto flex h-16 max-w-3xl items-center justify-between px-4 sm:px-6">
+          <Link href="/" className="inline-flex items-center gap-2 text-sm font-medium text-muted hover:text-text">
+            <ArrowLeft className="size-4" /> Início
+          </Link>
+          <Link href="/admin" className="text-sm font-medium text-muted hover:text-text">Painel de gestão</Link>
+        </div>
+      </header>
+
+      <main className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-12">
+        <div className="mb-8 text-center">
+          <span className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-brand text-white shadow-lg shadow-brand/30">
+            <CarFront className="size-7" aria-hidden />
+          </span>
+          <h1 className="mt-4 text-3xl font-extrabold tracking-tight text-text">Portal do motorista</h1>
+          <p className="mt-2 text-muted">Estacionamento rotativo · Praça Central</p>
+        </div>
+
+        <div className="mb-6 grid grid-cols-2 rounded-2xl border border-border bg-surface p-1" role="tablist">
+          {([
+            ['reserve', 'Reservar vaga'],
+            ['lookup', 'Minha reserva'],
+          ] as const).map(([key, label]) => (
+            <button key={key} type="button" role="tab" aria-selected={tab === key} onClick={() => setTab(key)} className={cn('h-11 rounded-xl text-sm font-semibold transition-colors', tab === key ? 'bg-brand text-white shadow-md shadow-brand/30' : 'text-muted hover:text-text')}>
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {tab === 'reserve' ? <ReserveTab /> : <LookupTab />}
+      </main>
     </div>
   );
 }

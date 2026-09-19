@@ -310,19 +310,19 @@ function Portal() {
   return (
     <div className="flex min-h-dvh flex-col">
       <header className="border-b border-border bg-surface">
-        <div className="mx-auto grid h-20 max-w-[1440px] grid-cols-[1fr_auto_1fr] items-center px-6">
-          <Link href="/" className="inline-flex items-center gap-2 text-muted hover:text-text">
-            <ArrowLeft className="size-5" strokeWidth={1.75} aria-hidden /> Início
+        <div className="mx-auto grid h-20 max-w-[1440px] grid-cols-[1fr_auto_1fr] items-center px-4 sm:px-6">
+          <Link href="/" className="inline-flex items-center gap-2 whitespace-nowrap text-muted hover:text-text" aria-label="Início">
+            <ArrowLeft className="size-5" strokeWidth={1.75} aria-hidden /> <span className="hidden sm:inline">Início</span>
           </Link>
-          <Link href="/" className="flex items-center gap-3">
-            <Image src="/logo.png" alt="" width={56} height={56} className="size-14 rounded-2xl" priority />
+          <Link href="/" className="flex items-center gap-2 sm:gap-3">
+            <Image src="/logo.png" alt="" width={56} height={56} className="size-11 rounded-xl sm:size-14 sm:rounded-2xl" priority />
             <span className="leading-tight">
-              <span className="block text-2xl font-bold text-brand">Praça Central</span>
-              <span className="block text-sm font-semibold tracking-[0.2em] text-brand">ESTACIONAMENTO</span>
+              <span className="block text-xl font-bold text-brand sm:text-2xl">Praça Central</span>
+              <span className="block text-xs font-semibold tracking-[0.2em] text-brand sm:text-sm">ESTACIONAMENTO</span>
             </span>
           </Link>
-          <Link href="/admin" className="inline-flex items-center justify-end gap-2 text-muted hover:text-text">
-            <LayoutGrid className="size-5" strokeWidth={1.75} aria-hidden /> Painel de gestão
+          <Link href="/admin" className="inline-flex items-center justify-end gap-2 whitespace-nowrap text-muted hover:text-text" aria-label="Painel de gestão">
+            <LayoutGrid className="size-5" strokeWidth={1.75} aria-hidden /> <span className="hidden md:inline">Painel de gestão</span>
           </Link>
         </div>
       </header>

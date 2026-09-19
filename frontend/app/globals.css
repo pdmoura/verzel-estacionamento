@@ -48,8 +48,10 @@
 /* Driver portal backdrop: pale city + car illustration pinned to the bottom, full width. */
 .portal-bg {
   background-color: var(--bg);
-  background-image: linear-gradient(180deg, var(--bg) 0%, rgba(244, 247, 254, 0) 45%, rgba(244, 247, 254, 0) 85%, var(--bg) 100%), url('/portal-bg.jpg');
-  background-size: 100% 100%, 100% auto;
+  /* The illustration is 16:9 and stretched to the full width, so its height is 56.25vw.
+     The gradient is sized to the same box so the fade sits exactly on the image's top edge. */
+  background-image: linear-gradient(180deg, var(--bg) 0%, rgba(244, 247, 254, 0) 40%, rgba(244, 247, 254, 0) 82%, var(--bg) 100%), url('/portal-bg.jpg');
+  background-size: 100% calc(56.25vw + 2px), 100% auto;
   background-position: center bottom, center bottom;
   background-repeat: no-repeat;
 }

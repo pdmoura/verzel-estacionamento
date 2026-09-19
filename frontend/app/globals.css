@@ -60,6 +60,24 @@
   to { transform: translateX(0); opacity: 1; }
 }
 
+/* Scroll-driven entrance for the landing rows. Pure CSS: the element rises
+   as it enters the viewport. Browsers without animation-timeline, and people
+   who prefer reduced motion, simply get the element in place. */
+@keyframes rise {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .reveal {
+      animation: rise linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 35%;
+    }
+  }
+}
+
 @layer base {
   html {
     scroll-behavior: smooth;

@@ -9,10 +9,10 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 const SECTORS = [
-  { name: 'Setor A', location: 'Ala Norte — próximo à fonte', reservableQuota: 12, hourlyRate: 5.5 },
-  { name: 'Setor B', location: 'Ala Sul — em frente ao coreto', reservableQuota: 8, hourlyRate: 6.0 },
-  { name: 'Setor C', location: 'Ala Leste — acesso pela Rua das Flores', reservableQuota: 6, hourlyRate: 4.5 },
-  { name: 'Setor VIP', location: 'Entrada principal — coberto', reservableQuota: 3, hourlyRate: 12.0 },
+  { name: 'Setor A', location: 'Ala Norte, próximo à fonte', reservableQuota: 12, hourlyRate: 5.5 },
+  { name: 'Setor B', location: 'Ala Sul, em frente ao coreto', reservableQuota: 8, hourlyRate: 6.0 },
+  { name: 'Setor C', location: 'Ala Leste, acesso pela Rua das Flores', reservableQuota: 6, hourlyRate: 4.5 },
+  { name: 'Setor VIP', location: 'Entrada principal, coberto', reservableQuota: 3, hourlyRate: 12.0 },
 ];
 
 async function main() {

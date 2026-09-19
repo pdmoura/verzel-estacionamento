@@ -15,7 +15,7 @@ export function allowedOrigins(): (string | RegExp)[] {
   const list: (string | RegExp)[] = [
     'http://localhost:3000',
     // Vercel preview/production deployments of the frontend
-    /^https:\/\/estacionamento(-[a-z0-9-]+)?(-[a-z0-9-]+)?\.vercel\.app$/,
+    /^https:\/\/praca-central-estacionamento(-[a-z0-9-]+)*\.vercel\.app$/,
   ];
   for (const raw of (process.env.FRONTEND_URL ?? '').split(',')) {
     const origin = raw.trim().replace(/\/$/, '');

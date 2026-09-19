@@ -88,7 +88,8 @@ export default function LandingPage() {
               <span className="hidden sm:inline">Painel</span>
             </Link>
             <Link href="/reserva" className="inline-flex h-10 items-center rounded-xl bg-brand px-4 text-sm font-semibold whitespace-nowrap text-white hover:bg-brand-strong active:scale-[0.98] sm:h-12 sm:px-7 sm:text-lg">
-              Reservar vaga
+              <span className="sm:hidden">Reservar</span>
+              <span className="hidden sm:inline">Reservar vaga</span>
             </Link>
           </nav>
         </div>
